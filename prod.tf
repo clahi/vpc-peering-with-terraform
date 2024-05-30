@@ -2,24 +2,24 @@ provider "aws" {
   region = var.aws_region
 }
 
-resource "aws_vpc" "my-vpc" {
+resource "aws_vpc" "prod-vpc" {
   cidr_block = "10.0.0.0/16"
 
   tags = {
-    Name = "my-vpc"
+    Name = "prod-vpc"
   }
 }
 
 resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.my-vpc.id
+  vpc_id = aws_vpc.prod-vpc.id
 
   tags = {
-    Name = "my-vpc-igw"
+    Name = "prod-vpc-igw"
   }
 }
 
 resource "aws_subnet" "public-subnet" {
-  vpc_id            = aws_vpc.my-vpc.id
+  vpc_id            = aws_vpc.prod-vpc.id
   cidr_block        = "10.0.1.0/24"
   availability_zone = "us-east-1a"
 
@@ -29,7 +29,7 @@ resource "aws_subnet" "public-subnet" {
 }
 
 resource "aws_route_table" "public-route-table" {
-  vpc_id = aws_vpc.my-vpc.id
+  vpc_id = aws_vpc.prod-vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -46,6 +46,12 @@ resource "aws_route_table_association" "route-table-assoc" {
   subnet_id      = aws_subnet.public-subnet.id
 }
 
+resource "aws_route" "route-to-dev-vpc" {
+  route_table_id            = aws_route_table.public-route-table.id
+  destination_cidr_block    = aws_vpc.dev-vpc.cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.my-peering-connection.id
+}
+
 resource "aws_key_pair" "my-key" {
   key_name   = "my-key"
   public_key = file("${path.module}/my-key.pub")
@@ -54,7 +60,7 @@ resource "aws_key_pair" "my-key" {
 resource "aws_security_group" "allow-http" {
   name        = "allow-http"
   description = "Allow httpd from everywhere"
-  vpc_id      = aws_vpc.my-vpc.id
+  vpc_id      = aws_vpc.prod-vpc.id
 
   tags = {
     Name = "allow-http"
@@ -108,7 +114,7 @@ data "aws_ami" "amazon-linux" {
 
 }
 
-resource "aws_instance" "my-server" {
+resource "aws_instance" "prod-server" {
   ami           = data.aws_ami.amazon-linux.id
   instance_type = var.instance_type
 
@@ -128,7 +134,7 @@ resource "aws_instance" "my-server" {
 
 resource "aws_eip" "name" {
   network_interface = aws_network_interface.pubic-network-interface.id
-  depends_on = [aws_instance.my-server]
+  depends_on        = [aws_instance.prod-server]
 }
 
 

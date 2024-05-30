@@ -1,5 +1,5 @@
 resource "aws_subnet" "private-subnet" {
-  vpc_id            = aws_vpc.my-vpc.id
+  vpc_id            = aws_vpc.prod-vpc.id
   cidr_block        = "10.0.2.0/24"
   availability_zone = "us-east-1b"
 
@@ -11,7 +11,7 @@ resource "aws_subnet" "private-subnet" {
 resource "aws_security_group" "allow-access-to-internet" {
   name        = "allow-access"
   description = "Allow instances in private network access to the internet"
-  vpc_id      = aws_vpc.my-vpc.id
+  vpc_id      = aws_vpc.prod-vpc.id
 
   tags = {
     Name = "allow-acces-to-internet"
@@ -42,7 +42,7 @@ resource "aws_network_interface" "private-network-interface" {
 }
 
 resource "aws_route_table" "private-subnet-route-table" {
-  vpc_id = aws_vpc.my-vpc.id
+  vpc_id = aws_vpc.prod-vpc.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_nat_gateway.nat-gateway.id
